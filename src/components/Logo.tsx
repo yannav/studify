@@ -2,7 +2,7 @@ import { cx } from '../lib/cx'
 import { Link } from '../lib/router'
 import { BRAND } from '../content'
 
-/** Cramly's mark: a four-point spark, drawn as two crossed strokes. */
+/** Studify's mark: a four-point spark, drawn as two crossed strokes. */
 export function Mark({ className }: { className?: string }) {
   return (
     <svg viewBox="0 0 24 24" fill="none" aria-hidden className={cx('size-6', className)}>

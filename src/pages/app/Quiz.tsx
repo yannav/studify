@@ -6,6 +6,7 @@ import { Button, ButtonLink } from '../../components/Button'
 import { Notice } from '../../components/Notice'
 import { ProgressBar, ScoreRing } from '../../components/Progress'
 import { cx } from '../../lib/cx'
+import { useI18n } from '../../lib/i18n'
 import { markStudied, packOf, useAttempts } from '../../lib/library'
 import { AppHeader } from './AppHeader'
 import { DocPicker } from './DocPicker'
@@ -17,6 +18,7 @@ const LETTERS = ['A', 'B', 'C', 'D', 'E']
 
 /** Multiple-choice practice test: one question at a time, feedback, then a score saved to history. */
 export function QuizPage() {
+  const { t, locale } = useI18n()
   const [doc, docs, pick] = useActiveDoc()
   const [attempts, setAttempts] = useAttempts()
   const [phase, setPhase] = useState<Phase>('intro')
@@ -67,7 +69,10 @@ export function QuizPage() {
 
   return (
     <>
-      <AppHeader title="Practice quiz" lede={`${pack.quiz.length} questions written from ${pack.title}.`}>
+      <AppHeader
+        title={t('Practice quiz')}
+        lede={t('{n} questions written from {title}.', { n: pack.quiz.length, title: pack.title })}
+      >
         <DocPicker doc={doc} docs={docs} onChange={pick} />
       </AppHeader>
 
@@ -80,25 +85,28 @@ export function QuizPage() {
               </span>
               <h2 className="mt-6 text-[clamp(26px,3vw,34px)] font-normal leading-tight tracking-[-0.04em]">{pack.title}</h2>
               <p className="mt-2 text-[15.5px] text-muted">
-                {pack.quiz.length} multiple-choice questions, about {Math.max(2, Math.round(pack.quiz.length * 0.6))} minutes. Every answer comes with a short explanation.
+                {t('{n} multiple-choice questions, about {m} minutes. Every answer comes with a short explanation.', {
+                  n: pack.quiz.length,
+                  m: Math.max(2, Math.round(pack.quiz.length * 0.6)),
+                })}
               </p>
               <div className="mt-5 flex flex-wrap gap-2">
                 <Badge>{pack.subject}</Badge>
-                {best >= 0 ? <Badge tone="leaf">Best score {Math.round(best * 100)}%</Badge> : <Badge>Not taken yet</Badge>}
+                {best >= 0 ? <Badge tone="leaf">{t('Best score {n}%', { n: Math.round(best * 100) })}</Badge> : <Badge>{t('Not taken yet')}</Badge>}
               </div>
               <Button variant="paper" size="lg" className="mt-8" iconRight={<ArrowRight className="size-4" />} onClick={start}>
-                {history.length ? 'Take it again' : 'Start quiz'}
+                {history.length ? t('Take it again') : t('Start quiz')}
               </Button>
             </div>
             {history.length > 0 && (
               <section aria-labelledby="hist-title">
                 <h2 id="hist-title" className="text-[15px] font-medium text-soft">
-                  Past attempts
+                  {t('Past attempts')}
                 </h2>
                 <ul className="mt-3 divide-y divide-line rounded-[22px] border border-line">
                   {[...history].reverse().slice(0, 5).map((a) => (
                     <li key={a.at} className="flex items-center justify-between px-5 py-3.5 text-[14.5px]">
-                      <span className="text-muted">{new Date(a.at).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}</span>
+                      <span className="text-muted">{new Date(a.at).toLocaleDateString(locale, { weekday: 'short', month: 'short', day: 'numeric' })}</span>
                       <span className="tabular-nums">
                         {a.score} of {a.total}
                       </span>
@@ -113,9 +121,9 @@ export function QuizPage() {
         {phase === 'question' && q && (
           <div className="grid gap-6">
             <div className="flex items-center gap-4">
-              <ProgressBar label="Quiz progress" value={i + (checked ? 1 : 0)} max={pack.quiz.length} className="flex-1" />
+              <ProgressBar label={t('Quiz progress')} value={i + (checked ? 1 : 0)} max={pack.quiz.length} className="flex-1" />
               <span className="text-[13.5px] tabular-nums text-muted">
-                Question {i + 1} of {pack.quiz.length}
+                {t('Question {i} of {n}', { i: i + 1, n: pack.quiz.length })}
               </span>
             </div>
             <fieldset key={q.id} className="glass animate-pop rounded-[32px] p-6 sm:p-9">
@@ -147,23 +155,26 @@ export function QuizPage() {
               </div>
               {checked && (
                 <Notice tone={choice === q.answer ? 'success' : 'error'} className="mt-6">
-                  <strong className="font-semibold">{choice === q.answer ? 'Correct.' : `Not quite: the answer is ${q.options[q.answer]}.`}</strong> {q.why}
+                  <strong className="font-semibold">
+                    {choice === q.answer ? t('Correct.') : t('Not quite: the answer is {answer}.', { answer: q.options[q.answer] })}
+                  </strong>{' '}
+                  {q.why}
                 </Notice>
               )}
               {nudge && !checked && (
                 <p role="alert" className="mt-4 text-[13.5px] text-danger">
-                  Choose an answer first.
+                  {t('Choose an answer first.')}
                 </p>
               )}
             </fieldset>
             <div className="flex justify-end gap-2">
               {!checked ? (
                 <Button variant="paper" size="lg" onClick={check}>
-                  Check answer
+                  {t('Check answer')}
                 </Button>
               ) : (
                 <Button variant="paper" size="lg" iconRight={<ArrowRight className="size-4" />} onClick={next}>
-                  {i + 1 < pack.quiz.length ? 'Next question' : 'See my score'}
+                  {i + 1 < pack.quiz.length ? t('Next question') : t('See my score')}
                 </Button>
               )}
             </div>
@@ -173,36 +184,46 @@ export function QuizPage() {
         {phase === 'results' && (
           <div className="grid gap-6">
             <div className="glass grid justify-items-center rounded-[32px] p-8 text-center sm:p-12">
-              <ScoreRing value={score} max={pack.quiz.length} label={`You scored ${score} out of ${pack.quiz.length}`} />
+              <ScoreRing value={score} max={pack.quiz.length} label={t('You scored {score} out of {total}', { score, total: pack.quiz.length })} />
               <h2 className="mt-6 text-[clamp(26px,3vw,34px)] font-normal tracking-[-0.04em]">
-                {score === pack.quiz.length ? 'Perfect score' : score / pack.quiz.length >= 0.6 ? 'Nicely done' : 'Good start'}
+                {score === pack.quiz.length ? t('Perfect score') : score / pack.quiz.length >= 0.6 ? t('Nicely done') : t('Good start')}
               </h2>
               <p className="mt-2 max-w-md text-[15.5px] text-muted">
                 {score === pack.quiz.length ? 'You know this file. Come back in a few days to make it stick.' : 'Review the questions you missed below, then try the flashcards for this file.'}
               </p>
               <div className="mt-8 flex flex-wrap justify-center gap-2">
                 <Button variant="glass" icon={<RotateCcw className="size-4" />} onClick={start}>
-                  Retake quiz
+                  {t('Retake quiz')}
                 </Button>
                 <ButtonLink href={`/app/flashcards?doc=${doc.id}`} variant="paper">
-                  Review flashcards
+                  {t('Review flashcards')}
                 </ButtonLink>
               </div>
             </div>
             <section aria-labelledby="review-title">
               <h2 id="review-title" className="text-[15px] font-medium text-soft">
-                Your answers
+                {t('Your answers')}
               </h2>
               <ol className="mt-3 grid gap-2.5">
                 {pack.quiz.map((qq, n) => {
                   const ok = answers[n] === qq.answer
                   return (
                     <li key={qq.id} className="panel flex items-start gap-3 rounded-[20px] p-4">
-                      {ok ? <CircleCheck aria-label="Correct" className="mt-0.5 size-5 shrink-0 text-leaf-text" /> : <CircleX aria-label="Incorrect" className="mt-0.5 size-5 shrink-0 text-danger" />}
+                      {ok ? (
+                        <CircleCheck aria-label={t('Correct')} className="mt-0.5 size-5 shrink-0 text-leaf-text" />
+                      ) : (
+                        <CircleX aria-label={t('Incorrect')} className="mt-0.5 size-5 shrink-0 text-danger" />
+                      )}
                       <div className="text-[14.5px]">
                         <p className="text-fg">{qq.prompt}</p>
                         <p className="mt-1 text-muted">
-                          {ok ? qq.options[qq.answer] : `You said ${qq.options[answers[n]] ?? 'nothing'}; answer: ${qq.options[qq.answer]}.`} {qq.why}
+                          {ok
+                            ? qq.options[qq.answer]
+                            : t('You said {said}; answer: {answer}.', {
+                                said: qq.options[answers[n]] ?? t('nothing'),
+                                answer: qq.options[qq.answer],
+                              })}{' '}
+                          {qq.why}
                         </p>
                       </div>
                     </li>

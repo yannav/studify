@@ -29,7 +29,7 @@ export function HowItWorks() {
           </ol>
         </div>
 
-        <div ref={ref} className="glass rounded-[32px] p-5 sm:p-7" aria-label="Example conversation with Cramly">
+        <div ref={ref} className="glass rounded-[32px] p-5 sm:p-7" aria-label="Example conversation with Studify">
           <div className="mb-6 flex items-center justify-between border-b border-line pb-4">
             <p className="text-[14px] text-soft">BIO 201 Cell division.pdf</p>
             <span className="text-[12.5px] text-faint">14 pages</span>
@@ -44,7 +44,7 @@ export function HowItWorks() {
             )}
             {seen && (
               <div className="animate-pop" style={{ animationDelay: '2100ms' }}>
-                <ChatBubble from="cramly" compact>
+                <ChatBubble from="studify" compact>
                   <span className="flex items-center gap-2.5">
                     <Layers aria-hidden className="size-4 text-leaf-text" /> Building 5 cards <TypingDots label="Writing flashcards" />
                   </span>

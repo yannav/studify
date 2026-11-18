@@ -9,7 +9,7 @@ import type { AnchorHTMLAttributes, MouseEvent } from 'react'
   links and reloads land on the right page.
 */
 
-const EVENT = 'cramly:navigate'
+const EVENT = 'studify:navigate'
 
 export type Location = { path: string; hash: string; search: string }
 

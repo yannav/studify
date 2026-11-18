@@ -1,10 +1,8 @@
 /*
-  Study packs: what Cramly "extracts" from a file. The browser and the Worker
-  both import this module. A real product would build a pack from the
-  uploaded file with a model; here every upload is matched to one of these
-  hand-written packs (see `packForFile`), so the demo works offline and costs
-  nothing. Replace `packForFile` and `answer` in src/worker/index.ts to wire
-  in your own model.
+  Study packs. Uploads get a pack built from their own text by
+  `buildPack` in ./analyze; the packs below are the three sample documents the
+  app seeds a new library with. `answer` is the tutor the Worker calls, and it
+  works on any pack, hand-written or generated.
 */
 
 export type Card = { id: string; front: string; back: string }
@@ -293,25 +291,26 @@ export const PACKS: Pack[] = [
 
 export const PACK_BY_ID = Object.fromEntries(PACKS.map((p) => [p.id, p])) as Record<string, Pack>
 
-function hash(s: string) {
-  let h = 2166136261
-  for (let i = 0; i < s.length; i++) h = Math.imul(h ^ s.charCodeAt(i), 16777619)
-  return h >>> 0
-}
+const strings = (v: unknown): v is string[] => Array.isArray(v) && v.every((x) => typeof x === 'string')
 
-const HINTS: { test: RegExp; id: string }[] = [
-  { test: /mitos|meios|cell|divis|chromo|bio/i, id: 'cell-division' },
-  { test: /french|revolution|napoleon|bastille|histor/i, id: 'french-revolution' },
-  { test: /deriv|calc|differen|math|limit/i, id: 'derivatives' },
-  { test: /photo|plant|chloro|calvin/i, id: 'photosynthesis' },
-  { test: /supply|demand|econ|market|elastic/i, id: 'supply-demand' },
-]
-
-/** Pick the pack for an uploaded file name: a keyword match, else a stable hash. */
-export function packForFile(name: string): Pack {
-  const hint = HINTS.find((h) => h.test.test(name))
-  if (hint) return PACK_BY_ID[hint.id]
-  return PACKS[hash(name.toLowerCase()) % PACKS.length]
+/** Shape check for a pack the client sends back with a question. */
+export function isPack(v: unknown): v is Pack {
+  if (!v || typeof v !== 'object') return false
+  const p = v as Record<string, unknown>
+  return (
+    typeof p.title === 'string' &&
+    typeof p.summary === 'string' &&
+    typeof p.subject === 'string' &&
+    typeof p.pages === 'number' &&
+    strings(p.keyPoints) &&
+    strings(p.suggestions) &&
+    Array.isArray(p.cards) &&
+    p.cards.every((c) => c && typeof c === 'object' && strings([(c as Card).front, (c as Card).back]) && typeof (c as Card).id === 'string') &&
+    Array.isArray(p.quiz) &&
+    p.quiz.every((q) => q && typeof q === 'object' && strings((q as Question).options) && typeof (q as Question).answer === 'number') &&
+    Array.isArray(p.answers) &&
+    p.answers.every((a) => a && typeof a === 'object' && strings((a as Answer).keywords) && typeof (a as Answer).text === 'string')
+  )
 }
 
 /** The scripted tutor: best keyword match in the pack, or a helpful fallback. */

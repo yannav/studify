@@ -101,7 +101,7 @@ export function Styleguide() {
   return (
     <Container className="py-16">
       <Eyebrow>Design system</Eyebrow>
-      <h1 className="mt-4 text-[clamp(40px,5vw,64px)] font-normal tracking-[-0.05em]">Cramly style guide</h1>
+      <h1 className="mt-4 text-[clamp(40px,5vw,64px)] font-normal tracking-[-0.05em]">Studify style guide</h1>
       <p className="mt-4 max-w-2xl text-[17px] text-muted">Every token and component, rendered by the real code. Tokens live in src/styles.css; components in src/components.</p>
       <nav aria-label="Sections" className="mt-8 flex flex-wrap gap-2">
         {['colour', 'type', 'space', 'radii', 'shadow', 'motion', 'buttons', 'fields', 'feedback', 'content'].map((s) => (
@@ -288,7 +288,7 @@ export function Styleguide() {
         <div className="grid gap-4 md:grid-cols-3">
           <Notice tone="success">Your study pack is ready.</Notice>
           <Notice tone="error">Files can be up to 25 MB on the free plan.</Notice>
-          <Notice tone="info">Only the file name and size leave your browser.</Notice>
+          <Notice tone="info">Your file is read in your browser; only its text leaves it, to build the pack.</Notice>
         </div>
         <div className="mt-6 flex flex-wrap items-center gap-3">
           <Badge>Neutral</Badge>
@@ -341,8 +341,8 @@ export function Styleguide() {
         <div className="grid gap-10 lg:grid-cols-2">
           <div className="grid gap-4">
             <ChatBubble from="you" text="What is the difference between mitosis and meiosis?" />
-            <ChatBubble from="cramly" text="Mitosis makes **two identical cells**; meiosis makes **four different** ones." cite="p. 3" />
-            <ChatBubble from="cramly" text="You appear to be offline." error onRetry={() => toast('Retrying')} />
+            <ChatBubble from="studify" text="Mitosis makes **two identical cells**; meiosis makes **four different** ones." cite="p. 3" />
+            <ChatBubble from="studify" text="You appear to be offline." error onRetry={() => toast('Retrying')} />
           </div>
           <div className="grid justify-items-start gap-6">
             <FileStack />

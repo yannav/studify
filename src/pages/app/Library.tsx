@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Flame, Layers, ListChecks, MessageSquareText, Search, Sparkles, Trash2, Upload } from 'lucide-react'
+import { ChevronDown, Flame, Layers, ListChecks, MessageSquareText, Search, Sparkles, Trash2, Upload } from 'lucide-react'
 
 import { Badge } from '../../components/Badge'
 import { Button, ButtonLink, IconButton } from '../../components/Button'
@@ -10,10 +10,14 @@ import { Notice } from '../../components/Notice'
 import { Segmented } from '../../components/Segmented'
 import { Skeleton } from '../../components/Skeleton'
 import { useToast } from '../../components/Toast'
+import { SubjectField } from '../../components/SubjectField'
 import { UploadDialog } from '../../components/UploadDialog'
+import { cx } from '../../lib/cx'
+import { useI18n } from '../../lib/i18n'
 import { cardKey, docTitle, dueCount, packOf, streak, useAttempts, useCardStates, useDays, useDocs, useLibraryActions, useUser } from '../../lib/library'
 import type { Doc } from '../../lib/library'
 import { useLocation } from '../../lib/router'
+import { SUBJECT_NAMES } from '../../shared/analyze'
 import { AppHeader } from './AppHeader'
 
 function greeting() {
@@ -22,9 +26,10 @@ function greeting() {
 }
 
 const SIZE = (n: number) => (n > 1_000_000 ? `${(n / 1_000_000).toFixed(1)} MB` : `${Math.max(1, Math.round(n / 1000))} KB`)
-const DATE = (iso: string) => new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+const DATE = (iso: string, locale: string) => new Date(iso).toLocaleDateString(locale, { month: 'short', day: 'numeric' })
 
 export function LibraryPage() {
+  const { t, locale } = useI18n()
   const [docs] = useDocs()
   const [user] = useUser()
   const [states] = useCardStates()
@@ -37,7 +42,8 @@ export function LibraryPage() {
   const [subject, setSubject] = useState('all')
   const [upload, setUpload] = useState(false)
   const [doomed, setDoomed] = useState<Doc | null>(null)
-  const { remove } = useLibraryActions()
+  const [subjectEdit, setSubjectEdit] = useState<{ doc: Doc; value: string } | null>(null)
+  const { remove, setSubject: setDocSubject } = useLibraryActions()
   const toast = useToast()
 
   // A short skeleton, as a real app would show while the library loads.
@@ -54,12 +60,13 @@ export function LibraryPage() {
   })
   const avg = attempts.length ? Math.round((attempts.reduce((n, a) => n + a.score / a.total, 0) / attempts.length) * 100) : null
   const due = dueCount(docs, states)
+  const subjectChoices = [...new Set([...SUBJECT_NAMES, subjectEdit?.value.trim() ?? ''].filter(Boolean))]
 
   return (
     <>
-      <AppHeader title={`${greeting()}${user ? `, ${user.name.split(' ')[0]}` : ''}`} lede="Here is everything you are studying.">
+      <AppHeader title={`${t(greeting())}${user ? `, ${user.name.split(' ')[0]}` : ''}`} lede={t('Here is everything you are studying.')}>
         <Button variant="paper" icon={<Upload className="size-4" />} onClick={() => setUpload(true)}>
-          Upload file
+          {t('Upload file')}
         </Button>
       </AppHeader>
 
@@ -70,12 +77,12 @@ export function LibraryPage() {
           {[
             { label: 'Day streak', value: streak(days), icon: Flame },
             { label: 'Cards due', value: due, icon: Layers },
-            { label: 'Quiz average', value: avg === null ? 'None yet' : `${avg}%`, icon: ListChecks },
+            { label: 'Quiz average', value: avg === null ? t('None yet') : `${avg}%`, icon: ListChecks },
             { label: 'Files', value: docs.length, icon: Sparkles },
           ].map((s) => (
             <div key={s.label} className="panel rounded-[22px] p-5">
               <dt className="flex items-center gap-2 text-[13.5px] text-muted">
-                <s.icon aria-hidden className="size-4 text-leaf-text" /> {s.label}
+                <s.icon aria-hidden className="size-4 text-leaf-text" /> {t(s.label)}
               </dt>
               <dd className="mt-3 text-[30px] font-normal leading-none tracking-[-0.04em]">{s.value}</dd>
             </div>
@@ -86,19 +93,19 @@ export function LibraryPage() {
           <div className="flex flex-wrap items-center gap-3">
             <div className="relative w-full sm:w-[300px]">
               <label htmlFor="lib-search" className="sr-only">
-                Search files
+                {t('Search files')}
               </label>
               <Search aria-hidden className="pointer-events-none absolute left-4 top-1/2 size-4 -translate-y-1/2 text-faint" />
-              <input id="lib-search" type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search files" className="field h-11 pl-11" />
+              <input id="lib-search" type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder={t('Search files')} className="field h-11 pl-11" />
             </div>
             <div className="max-w-full overflow-x-auto">
-              <Segmented label="Subject" value={subject} onChange={setSubject} options={[{ value: 'all', label: 'All' }, ...subjects.map((s) => ({ value: s, label: s }))]} />
+              <Segmented label={t('Subject')} value={subject} onChange={setSubject} options={[{ value: 'all', label: t('All') }, ...subjects.map((s) => ({ value: s, label: s }))]} />
             </div>
           </div>
         )}
 
         {!ready ? (
-          <div className="grid gap-4 md:grid-cols-2 2xl:grid-cols-3" aria-busy="true" aria-label="Loading library">
+          <div className="grid gap-4 md:grid-cols-2 2xl:grid-cols-3" aria-busy="true" aria-label={t('Loading library')}>
             {[0, 1, 2].map((i) => (
               <div key={i} className="panel grid gap-4 rounded-[26px] p-6">
                 <Skeleton className="size-12" />
@@ -111,18 +118,18 @@ export function LibraryPage() {
         ) : docs.length === 0 ? (
           <EmptyState
             icon={<Upload className="size-6" />}
-            title="Nothing here yet"
-            body="Upload lecture slides, notes or a photo of the board to build your first study pack."
+            title={t('Nothing here yet')}
+            body={t('Upload lecture slides, notes or a photo of the board to build your first study pack.')}
             action={
               <Button variant="paper" onClick={() => setUpload(true)}>
-                Upload your first file
+                {t('Upload your first file')}
               </Button>
             }
           />
         ) : shown.length === 0 ? (
           <EmptyState
             icon={<Search className="size-6" />}
-            title="No files match"
+            title={t('No files match')}
             body={`Nothing in your library matches “${q}”${subject !== 'all' ? ` in ${subject}` : ''}.`}
             action={
               <Button
@@ -132,7 +139,7 @@ export function LibraryPage() {
                   setSubject('all')
                 }}
               >
-                Clear filters
+                {t('Clear filters')}
               </Button>
             }
           />
@@ -146,28 +153,44 @@ export function LibraryPage() {
                 <li key={d.id} className="panel flex animate-pop flex-col rounded-[26px] p-6">
                   <div className="flex items-start justify-between gap-3">
                     <FileIcon kind={d.kind} size="lg" />
-                    <IconButton label={`Delete ${docTitle(d)}`} variant="ghost" size="sm" onClick={() => setDoomed(d)}>
+                    <IconButton label={t('Delete {name}', { name: docTitle(d) })} variant="ghost" size="sm" onClick={() => setDoomed(d)}>
                       <Trash2 className="size-4" />
                     </IconButton>
                   </div>
                   <h2 className="mt-5 text-[18px] font-medium leading-snug tracking-[-0.02em]">{docTitle(d)}</h2>
                   <p className="mt-1 text-[13.5px] text-muted">
-                    {KIND_LABEL[d.kind]}, {p.pages} pages, {SIZE(d.size)}, added {DATE(d.addedAt)}
+                    {t('{n} pages, {size}, added {date}', {
+                      n: p.pages,
+                      size: `${t(KIND_LABEL[d.kind])}, ${SIZE(d.size)}`,
+                      date: DATE(d.addedAt, locale),
+                    })}
                   </p>
                   <div className="mt-4 flex flex-wrap gap-2">
-                    <Badge>{p.subject}</Badge>
-                    <Badge tone={dueHere ? 'amber' : 'leaf'}>{dueHere ? `${dueHere} cards due` : 'All cards reviewed'}</Badge>
-                    {best >= 0 && <Badge tone="leaf">Best quiz {best}%</Badge>}
+                    <button
+                      type="button"
+                      onClick={() => setSubjectEdit({ doc: d, value: p.subject })}
+                      aria-label={t('Change subject of {name}', { name: docTitle(d) })}
+                      className="group rounded-full focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-leaf"
+                    >
+                      <Badge className="transition-colors group-hover:border-leaf/40 group-hover:text-leaf-text">
+                        {p.subject}
+                        <ChevronDown aria-hidden className="size-3.5 opacity-60" />
+                      </Badge>
+                    </button>
+                    <Badge tone={dueHere ? 'amber' : 'leaf'}>
+                      {dueHere ? t('{n} cards due', { n: dueHere }) : t('All cards reviewed')}
+                    </Badge>
+                    {best >= 0 && <Badge tone="leaf">{t('Best quiz {n}%', { n: best })}</Badge>}
                   </div>
                   <div className="mt-6 grid grid-cols-3 gap-2 pt-1">
                     <ButtonLink href={`/app/chat?doc=${d.id}`} variant="tint" size="sm" className="h-10 px-2" icon={<MessageSquareText className="size-4" />}>
-                      Ask
+                      {t('Ask')}
                     </ButtonLink>
                     <ButtonLink href={`/app/flashcards?doc=${d.id}`} variant="glass" size="sm" className="h-10 px-2" icon={<Layers className="size-4" />}>
-                      Cards
+                      {t('Cards')}
                     </ButtonLink>
                     <ButtonLink href={`/app/quiz?doc=${d.id}`} variant="glass" size="sm" className="h-10 px-2" icon={<ListChecks className="size-4" />}>
-                      Quiz
+                      {t('Quiz')}
                     </ButtonLink>
                   </div>
                 </li>
@@ -178,10 +201,67 @@ export function LibraryPage() {
       </div>
 
       <UploadDialog open={upload} onClose={() => setUpload(false)} />
-      <Modal open={!!doomed} onClose={() => setDoomed(null)} title="Delete this file?" description={doomed ? `${docTitle(doomed)} and its chat, card progress and quiz scores will be removed.` : undefined}>
+      <Modal
+        open={!!subjectEdit}
+        onClose={() => setSubjectEdit(null)}
+        title={t('Change subject')}
+        description={subjectEdit ? docTitle(subjectEdit.doc) : undefined}
+      >
+        <div className="grid gap-5">
+          <div className="grid gap-2">
+            <p className="text-[13.5px] font-medium text-soft">{t('Choose a subject')}</p>
+            <div className="flex flex-wrap gap-2">
+              {subjectChoices.map((s) => (
+                <button
+                  key={s}
+                  type="button"
+                  aria-pressed={subjectEdit?.value === s}
+                  onClick={() => setSubjectEdit((e) => (e ? { ...e, value: s } : e))}
+                  className={cx(
+                    'inline-flex h-8 items-center rounded-full border px-3 text-[13px] transition-colors',
+                    subjectEdit?.value === s
+                      ? 'border-leaf/40 bg-leaf-soft text-leaf-text'
+                      : 'border-white/10 bg-white/6 text-soft hover:border-leaf/30 hover:text-fg',
+                  )}
+                >
+                  {s}
+                </button>
+              ))}
+            </div>
+          </div>
+          <SubjectField
+            value={subjectEdit?.value ?? ''}
+            onChange={(value) => setSubjectEdit((s) => (s ? { ...s, value } : s))}
+            hint={t('Or add a new one.')}
+          />
+          <div className="flex flex-wrap justify-end gap-2">
+            <Button variant="ghost" onClick={() => setSubjectEdit(null)}>
+              {t('Cancel')}
+            </Button>
+            <Button
+              variant="leaf"
+              onClick={() => {
+                if (!subjectEdit) return
+                setDocSubject(subjectEdit.doc.id, subjectEdit.value)
+                toast(t('Subject updated.'))
+                setSubjectEdit(null)
+              }}
+            >
+              {t('Save')}
+            </Button>
+          </div>
+        </div>
+      </Modal>
+      <Modal open={!!doomed} onClose={() => setDoomed(null)} title={t('Delete this file?')}
+        description={
+          doomed
+            ? t('{name} and its chat, card progress and quiz scores will be removed.', { name: docTitle(doomed) })
+            : undefined
+        }
+      >
         <div className="flex flex-wrap justify-end gap-2">
           <Button variant="ghost" onClick={() => setDoomed(null)}>
-            Cancel
+            {t('Cancel')}
           </Button>
           <Button
             variant="danger"
@@ -189,11 +269,11 @@ export function LibraryPage() {
             onClick={() => {
               if (!doomed) return
               remove(doomed.id)
-              toast(`Deleted ${docTitle(doomed)}`)
+              toast(t('Deleted {name}', { name: docTitle(doomed) }))
               setDoomed(null)
             }}
           >
-            Delete file
+            {t('Delete file')}
           </Button>
         </div>
       </Modal>

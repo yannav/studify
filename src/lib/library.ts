@@ -12,8 +12,8 @@ import { readStore, useStored, writeStore } from './storage'
 */
 
 export type DocKind = 'pdf' | 'doc' | 'png' | 'txt' | 'ppt'
-export type Doc = { id: string; name: string; kind: DocKind; size: number; packId: string; addedAt: string }
-export type ChatMessage = { id: string; from: 'you' | 'cramly'; text: string; cite?: string | null; error?: boolean }
+export type Doc = { id: string; name: string; kind: DocKind; size: number; packId?: string; pack?: Pack; addedAt: string }
+export type ChatMessage = { id: string; from: 'you' | 'studify'; text: string; cite?: string | null; error?: boolean }
 export type CardState = { box: number; due: number; reviews: number }
 export type Attempt = { docId: string; score: number; total: number; at: string }
 export type User = { name: string; email: string; level: string }
@@ -24,15 +24,26 @@ export const SEED_DOCS: Doc[] = [
   { id: 'seed-calc', name: 'Calc lecture 4 whiteboard.png', kind: 'png', size: 2_140_000, packId: 'derivatives', addedAt: '2026-11-04T15:42:00.000Z' },
 ]
 
-const SEED_ATTEMPTS: Attempt[] = [
+export const SEED_ATTEMPTS: Attempt[] = [
   { docId: 'seed-hist', score: 4, total: 5, at: '2026-11-08T20:10:00.000Z' },
   { docId: 'seed-calc', score: 3, total: 5, at: '2026-11-06T19:00:00.000Z' },
 ]
 
-const KEYS = { docs: 'docs', cards: 'cards', attempts: 'attempts', chats: 'chats', user: 'user', days: 'days' }
+export const KEYS = { docs: 'docs', cards: 'cards', attempts: 'attempts', chats: 'chats', user: 'user', days: 'days' }
 
+/** The study pack built from this file's text, or a seeded pack for the samples. */
 export function packOf(doc: Doc): Pack {
-  return PACK_BY_ID[doc.packId] ?? PACK_BY_ID['cell-division']
+  return doc.pack ?? PACK_BY_ID[doc.packId ?? ''] ?? PACK_BY_ID['cell-division']
+}
+
+/** A subject as stored: trimmed, single-spaced, not empty. */
+export function normaliseSubject(value: string) {
+  return value.replace(/\s+/g, ' ').trim().slice(0, 40) || 'Study notes'
+}
+
+/** A copy of the doc with a different subject, leaving the original untouched. */
+export function withSubject(doc: Doc, subject: string): Doc {
+  return { ...doc, pack: { ...packOf(doc), subject: normaliseSubject(subject) } }
 }
 
 /** "BIO 201 Cell division.pdf" → "BIO 201 Cell division" */
@@ -119,7 +130,11 @@ export function useLibraryActions() {
     },
     [setDocs, setChats, setStates, setAttempts],
   )
-  return { add, remove }
+  const setSubject = useCallback(
+    (id: string, subject: string) => setDocs((d) => d.map((doc) => (doc.id === id ? withSubject(doc, subject) : doc))),
+    [setDocs],
+  )
+  return { add, remove, setSubject }
 }
 
 export function resetDemo() {

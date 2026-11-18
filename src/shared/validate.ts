@@ -54,6 +54,10 @@ export function validateContact(b: { name?: unknown; email?: unknown; message?: 
 export const ACCEPTED = ['pdf', 'doc', 'docx', 'png', 'jpg', 'jpeg', 'txt', 'md', 'ppt', 'pptx'] as const
 export const MAX_BYTES = 25 * 1024 * 1024
 
+/** Text an upload must contain to be worth studying, and the most we analyse. */
+export const MIN_TEXT = 200
+export const MAX_TEXT = 120_000
+
 export function fileKind(name: string): 'pdf' | 'doc' | 'png' | 'txt' | 'ppt' {
   const ext = name.split('.').pop()?.toLowerCase() ?? ''
   if (ext === 'pdf') return 'pdf'
@@ -68,10 +72,15 @@ export function validateUpload(b: { name?: unknown; size?: unknown }): string | 
   if (!name) return 'Choose a file to upload.'
   if (name.length > 180) return 'That file name is too long.'
   const ext = name.split('.').pop()?.toLowerCase() ?? ''
-  if (!name.includes('.') || !ACCEPTED.includes(ext as (typeof ACCEPTED)[number])) return 'Cramly reads PDF, Word, PowerPoint, images and text files.'
+  if (!name.includes('.') || !ACCEPTED.includes(ext as (typeof ACCEPTED)[number])) return 'Studify reads PDF, Word, PowerPoint, images and text files.'
   const size = typeof b.size === 'number' ? b.size : -1
   if (!Number.isFinite(size) || size <= 0) return 'That file looks empty.'
   if (size > MAX_BYTES) return 'Files can be up to 25 MB on the free plan.'
+  return null
+}
+
+export function validateText(v: unknown): string | null {
+  if (typeof v !== 'string' || v.trim().length < MIN_TEXT) return 'There wasn’t enough text in that file to build a pack. Try a longer file.'
   return null
 }
 

@@ -7,6 +7,7 @@ import { Input } from '../components/Field'
 import { Notice } from '../components/Notice'
 import { AUTH } from '../content'
 import { postJson } from '../lib/api'
+import { useT } from '../lib/i18n'
 import { useUser } from '../lib/library'
 import type { User } from '../lib/library'
 import { Link, navigate } from '../lib/router'
@@ -14,6 +15,7 @@ import type { Errors } from '../shared/validate'
 import { validateLogin } from '../shared/validate'
 
 export function Login() {
+  const t = useT()
   const [, setUser] = useUser()
   const [v, setV] = useState({ email: '', password: '' })
   const [errors, setErrors] = useState<Errors>({})
@@ -39,23 +41,23 @@ export function Login() {
 
   return (
     <AuthShell
-      title={AUTH.loginTitle}
-      lede={AUTH.loginLede}
+      title={t(AUTH.loginTitle)}
+      lede={t(AUTH.loginLede)}
       footer={
         <>
-          New to Cramly?{' '}
+          {t('New to Studify?')}{' '}
           <Link href="/signup" className="inline-flex min-h-10 items-center text-leaf-text underline underline-offset-4">
-            Create an account
+            {t('Create an account')}
           </Link>
         </>
       }
     >
       <form onSubmit={submit} noValidate className="grid gap-5">
-        <Input label="Email" type="email" autoComplete="email" value={v.email} onChange={(e) => (setV({ ...v, email: e.target.value }), setErrors({ ...errors, email: '' }))} error={errors.email} />
-        <Input label="Password" type="password" autoComplete="current-password" value={v.password} onChange={(e) => (setV({ ...v, password: e.target.value }), setErrors({ ...errors, password: '' }))} error={errors.password} hint="Demo: any email and password sign you in." />
-        {failure && <Notice tone="error">{failure}</Notice>}
+        <Input label={t('Email')} type="email" autoComplete="email" value={v.email} onChange={(e) => (setV({ ...v, email: e.target.value }), setErrors({ ...errors, email: '' }))} error={errors.email ? t(errors.email) : undefined} />
+        <Input label={t('Password')} type="password" autoComplete="current-password" value={v.password} onChange={(e) => (setV({ ...v, password: e.target.value }), setErrors({ ...errors, password: '' }))} error={errors.password ? t(errors.password) : undefined} hint={t('Demo: any email and password sign you in.')} />
+        {failure && <Notice tone="error">{t(failure)}</Notice>}
         <Button type="submit" variant="paper" size="lg" block loading={busy}>
-          Log in
+          {t('Log in')}
         </Button>
       </form>
     </AuthShell>

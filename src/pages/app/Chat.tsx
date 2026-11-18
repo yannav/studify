@@ -8,6 +8,7 @@ import { ChatBubble } from '../../components/ChatBubble'
 import { FileIcon } from '../../components/FileIcon'
 import { TypingDots } from '../../components/TypingDots'
 import { postJson } from '../../lib/api'
+import { useT } from '../../lib/i18n'
 import { docTitle, markStudied, packOf, useChats } from '../../lib/library'
 import type { ChatMessage } from '../../lib/library'
 import { useReducedMotion } from '../../lib/useReducedMotion'
@@ -26,6 +27,7 @@ const uid = () => Math.random().toString(36).slice(2, 10)
  * document's study pack; the reply is revealed word by word like a stream.
  */
 export function ChatPage() {
+  const t = useT()
   const [doc, docs, pick] = useActiveDoc()
   const [chats, setChats] = useChats()
   const [draft, setDraft] = useState('')
@@ -57,25 +59,25 @@ export function ChatPage() {
 
   async function ask(text: string, retryOf?: string) {
     const err = validateQuestion(text)
-    if (err) return setError(err)
+    if (err) return setError(t(err))
     if (!doc) return
     setError(null)
     if (retryOf) setChats((c) => ({ ...c, [doc.id]: (c[doc.id] ?? []).filter((m) => m.id !== retryOf) }))
     else append({ id: uid(), from: 'you', text: text.trim() })
     setDraft('')
     setPending(true)
-    const res = await postJson<{ reply: Reply }>('/api/chat', { packId: doc.packId, message: text })
+    const res = await postJson<{ reply: Reply }>('/api/chat', { pack, message: text })
     await new Promise((r) => setTimeout(r, reduce ? 0 : 500))
     setPending(false)
     if (!res.ok) {
-      append({ id: uid(), from: 'cramly', text: res.error, error: true, cite: text })
+      append({ id: uid(), from: 'studify', text: t(res.error), error: true, cite: text })
       return
     }
     markStudied()
     const reply = res.data.reply
     const id = uid()
     if (reduce) {
-      append({ id, from: 'cramly', text: reply.text, cite: reply.cite })
+      append({ id, from: 'studify', text: reply.text, cite: reply.cite })
       setSuggestions(reply.suggestions)
       return
     }
@@ -87,7 +89,7 @@ export function ChatPage() {
       if (i >= words.length) {
         window.clearInterval(timer)
         setStreaming(null)
-        append({ id, from: 'cramly', text: reply.text, cite: reply.cite })
+        append({ id, from: 'studify', text: reply.text, cite: reply.cite })
         setSuggestions(reply.suggestions)
         box.current?.focus()
         return
@@ -110,29 +112,35 @@ export function ChatPage() {
 
   return (
     <div className="flex min-h-[calc(100svh-64px)] flex-col lg:h-svh lg:min-h-0">
-      <AppHeader title="Ask Cramly" lede="Answers come only from your file, with the page they came from.">
+      <AppHeader title={t('Ask Studify')} lede={t('Answers come only from your file, with the page they came from.')}>
         <div className="flex w-full items-center gap-2 sm:w-auto">
           <DocPicker doc={doc} docs={docs} onChange={pick} />
-          <IconButton className="shrink-0" label="Clear conversation" disabled={!thread.length || busy} onClick={() => setChats((c) => ({ ...c, [doc.id]: [] }))}>
+          <IconButton className="shrink-0" label={t('Clear conversation')} disabled={!thread.length || busy} onClick={() => setChats((c) => ({ ...c, [doc.id]: [] }))}>
             <Eraser className="size-4" />
           </IconButton>
         </div>
       </AppHeader>
 
       <div className="grid min-h-0 flex-1 xl:grid-cols-[1fr_340px]">
-        <section aria-label="Conversation" className="flex min-h-0 flex-col">
+        <section aria-label={t('Conversation')} className="flex min-h-0 flex-col">
           <div className="flex-1 overflow-y-auto px-5 py-8 sm:px-8 lg:px-10" aria-live="polite">
             <div className="mx-auto grid max-w-3xl gap-5">
-              <ChatBubble from="cramly" text={`I have read **${docTitle(doc)}** (${pack.pages} pages). Ask me anything about it, or pick a question below.`} />
+              <ChatBubble
+                from="studify"
+                text={t('I have read **{name}** ({n} pages). Ask me anything about it, or pick a question below.', {
+                  name: docTitle(doc),
+                  n: pack.pages,
+                })}
+              />
               {thread.map((m) => (
                 <ChatBubble key={m.id} from={m.from} text={m.text} cite={m.error ? null : m.cite} error={m.error} onRetry={m.error && m.cite ? () => void ask(m.cite as string, m.id) : undefined} />
               ))}
               {pending && (
-                <ChatBubble from="cramly">
+                <ChatBubble from="studify">
                   <TypingDots />
                 </ChatBubble>
               )}
-              {streaming && <ChatBubble from="cramly" text={streaming.shown + ' ▍'} />}
+              {streaming && <ChatBubble from="studify" text={streaming.shown + ' ▍'} />}
               <div ref={end} />
             </div>
           </div>
@@ -150,7 +158,7 @@ export function ChatPage() {
               )}
               <form onSubmit={submit} className="glass flex items-end gap-2 rounded-[24px] p-2 pl-4">
                 <label htmlFor="ask" className="sr-only">
-                  Ask a question about {docTitle(doc)}
+                  {t('Ask a question about {name}', { name: docTitle(doc) })}
                 </label>
                 <textarea
                   id="ask"
@@ -162,12 +170,12 @@ export function ChatPage() {
                     setError(null)
                   }}
                   onKeyDown={onKey}
-                  placeholder="Ask about this file…"
+                  placeholder={t('Ask about this file…')}
                   aria-invalid={error ? true : undefined}
                   aria-describedby={error ? 'ask-err' : 'ask-hint'}
                   className="max-h-40 min-h-11 flex-1 resize-none bg-transparent py-2.5 text-[15px] outline-none placeholder:text-faint"
                 />
-                <IconButton type="submit" label="Send" variant="leaf" disabled={busy}>
+                <IconButton type="submit" label={t('Send')} variant="leaf" disabled={busy}>
                   <ArrowUp className="size-5" />
                 </IconButton>
               </form>
@@ -177,14 +185,14 @@ export function ChatPage() {
                 </p>
               ) : (
                 <p id="ask-hint" className="mt-2 text-[12.5px] text-faint">
-                  Enter to send, Shift and Enter for a new line. This demo answers from a script, no model is called.
+                  {t('Enter to send, Shift and Enter for a new line. Answers come from your file’s text; no model is called.')}
                 </p>
               )}
             </div>
           </div>
         </section>
 
-        <aside aria-label="About this file" className="hidden border-l border-line p-6 xl:block xl:overflow-y-auto">
+        <aside aria-label={t('About this file')} className="hidden border-l border-line p-6 xl:block xl:overflow-y-auto">
           <div className="flex items-center gap-3">
             <FileIcon kind={doc.kind} />
             <div className="min-w-0">
@@ -193,9 +201,9 @@ export function ChatPage() {
             </div>
           </div>
           <Badge className="mt-5">{pack.subject}</Badge>
-          <h2 className="mt-5 text-[15px] font-medium">Summary</h2>
+          <h2 className="mt-5 text-[15px] font-medium">{t('Summary')}</h2>
           <p className="mt-2 text-[14px] leading-relaxed text-muted">{pack.summary}</p>
-          <h2 className="mt-6 text-[15px] font-medium">Key points</h2>
+          <h2 className="mt-6 text-[15px] font-medium">{t('Key points')}</h2>
           <ul className="mt-3 grid gap-3">
             {pack.keyPoints.map((k) => (
               <li key={k} className="flex gap-2.5 text-[14px] leading-snug text-soft">
@@ -206,10 +214,10 @@ export function ChatPage() {
           </ul>
           <div className="mt-8 grid gap-2">
             <ButtonLink href={`/app/flashcards?doc=${doc.id}`} variant="glass" icon={<Layers className="size-4" />}>
-              {pack.cards.length} flashcards
+              {t('{n} flashcards', { n: pack.cards.length })}
             </ButtonLink>
             <ButtonLink href={`/app/quiz?doc=${doc.id}`} variant="glass" icon={<ListChecks className="size-4" />}>
-              {pack.quiz.length}-question quiz
+              {t('{n}-question quiz', { n: pack.quiz.length })}
             </ButtonLink>
           </div>
         </aside>

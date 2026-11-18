@@ -8,6 +8,7 @@ import { Checkbox, Input, Select } from '../components/Field'
 import { Notice } from '../components/Notice'
 import { AUTH, PLANS } from '../content'
 import { postJson } from '../lib/api'
+import { useT } from '../lib/i18n'
 import { useUser } from '../lib/library'
 import type { User } from '../lib/library'
 import { Link, navigate, useLocation } from '../lib/router'
@@ -15,6 +16,7 @@ import type { Errors } from '../shared/validate'
 import { LEVELS, validateSignup } from '../shared/validate'
 
 export function Signup() {
+  const t = useT()
   const { search } = useLocation()
   const plan = PLANS.find((p) => p.id === new URLSearchParams(search).get('plan'))
   const [, setUser] = useUser()
@@ -49,34 +51,38 @@ export function Signup() {
 
   return (
     <AuthShell
-      title={AUTH.signupTitle}
-      lede={AUTH.signupLede}
+      title={t(AUTH.signupTitle)}
+      lede={t(AUTH.signupLede)}
       footer={
         <>
-          Already have an account?{' '}
+          {t('Already have an account?')}{' '}
           <Link href="/login" className="inline-flex min-h-10 items-center text-leaf-text underline underline-offset-4">
-            Log in
+            {t('Log in')}
           </Link>
         </>
       }
     >
-      {plan && plan.id !== 'free' && <Badge tone="leaf" className="mb-6">{plan.name} plan, 7 days free</Badge>}
+      {plan && plan.id !== 'free' && (
+        <Badge tone="leaf" className="mb-6">
+          {t(plan.name)}: 7 days free
+        </Badge>
+      )}
       <form onSubmit={submit} noValidate className="grid gap-5">
-        <Input id="su-name" label="Name" autoComplete="name" value={v.name} onChange={(e) => set('name', e.target.value)} error={errors.name} />
-        <Input id="su-email" label="Email" type="email" autoComplete="email" value={v.email} onChange={(e) => set('email', e.target.value)} error={errors.email} />
-        <Input id="su-password" label="Password" type="password" autoComplete="new-password" value={v.password} onChange={(e) => set('password', e.target.value)} error={errors.password} hint="8 or more characters, with a number." />
-        <Select id="su-level" label="Where do you study?" value={v.level} onChange={(e) => set('level', e.target.value)} error={errors.level}>
+        <Input id="su-name" label={t('Name')} autoComplete="name" value={v.name} onChange={(e) => set('name', e.target.value)} error={errors.name ? t(errors.name) : undefined} />
+        <Input id="su-email" label={t('Email')} type="email" autoComplete="email" value={v.email} onChange={(e) => set('email', e.target.value)} error={errors.email ? t(errors.email) : undefined} />
+        <Input id="su-password" label={t('Password')} type="password" autoComplete="new-password" value={v.password} onChange={(e) => set('password', e.target.value)} error={errors.password ? t(errors.password) : undefined} hint={t('8 or more characters, with a number.')} />
+        <Select id="su-level" label={t('Where do you study?')} value={v.level} onChange={(e) => set('level', e.target.value)} error={errors.level ? t(errors.level) : undefined}>
           <option value="" disabled>
-            Choose one
+            {t('Choose one')}
           </option>
           {LEVELS.map((l) => (
-            <option key={l}>{l}</option>
+            <option key={l}>{t(l)}</option>
           ))}
         </Select>
-        <Checkbox id="su-terms" checked={v.terms} onChange={(e) => set('terms', e.target.checked)} error={errors.terms} label="I agree to the terms and privacy policy." />
-        {failure && <Notice tone="error">{failure}</Notice>}
+        <Checkbox id="su-terms" checked={v.terms} onChange={(e) => set('terms', e.target.checked)} error={errors.terms ? t(errors.terms) : undefined} label={t('I agree to the terms and privacy policy.')} />
+        {failure && <Notice tone="error">{t(failure)}</Notice>}
         <Button type="submit" variant="paper" size="lg" block loading={busy}>
-          Create account
+          {t('Create account')}
         </Button>
       </form>
     </AuthShell>

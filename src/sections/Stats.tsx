@@ -4,7 +4,7 @@ import { STATS } from '../content'
 
 export function Stats() {
   return (
-    <section aria-label="Cramly in numbers" className="py-24">
+    <section aria-label="Studify in numbers" className="py-24">
       <Container>
         <dl className="grid grid-cols-2 gap-x-6 gap-y-12 lg:grid-cols-4">
           {STATS.map((s) => (

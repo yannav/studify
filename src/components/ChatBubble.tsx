@@ -5,15 +5,15 @@ import { IMAGES } from '../content'
 import { cx } from '../lib/cx'
 import { Rich } from './Rich'
 
-export function CramlyAvatar({ size = 32 }: { size?: number }) {
+export function StudifyAvatar({ size = 32 }: { size?: number }) {
   return <img src={IMAGES.mascot} alt="" aria-hidden width={size} height={size} className="round shrink-0 rounded-full border border-leaf/30 object-cover" style={{ width: size, height: size }} />
 }
 
-export function ChatBubble({ from, children, text, cite, error, onRetry, compact }: { from: 'you' | 'cramly'; text?: string; children?: ReactNode; cite?: string | null; error?: boolean; onRetry?: () => void; compact?: boolean }) {
+export function ChatBubble({ from, children, text, cite, error, onRetry, compact }: { from: 'you' | 'studify'; text?: string; children?: ReactNode; cite?: string | null; error?: boolean; onRetry?: () => void; compact?: boolean }) {
   const you = from === 'you'
   return (
     <div className={cx('flex items-end gap-2.5', you && 'flex-row-reverse')}>
-      {!you && <CramlyAvatar size={compact ? 26 : 32} />}
+      {!you && <StudifyAvatar size={compact ? 26 : 32} />}
       <div
         className={cx(
           'max-w-[min(560px,85%)] rounded-[22px] px-4 py-3 leading-relaxed',

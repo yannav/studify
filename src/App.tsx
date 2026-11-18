@@ -1,9 +1,11 @@
 import { lazy, Suspense, useEffect, useRef } from 'react'
 import type { ComponentType, ReactNode } from 'react'
 
-import { ToastProvider } from './components/Toast'
+import { ToastProvider, useToast } from './components/Toast'
 import { BRAND } from './content'
+import { LocaleProvider, useI18n } from './lib/i18n'
 import { scrollToHash, useLocation } from './lib/router'
+import { onStorageFailure } from './lib/storage'
 import { Home } from './pages/Home'
 import { NotFound } from './pages/NotFound'
 import { Footer } from './sections/Footer'
@@ -44,15 +46,24 @@ const routes: Route[] = [
 const Blank = () => <div className="min-h-screen" aria-busy="true" />
 
 export function App() {
+  return (
+    <LocaleProvider>
+      <AppInner />
+    </LocaleProvider>
+  )
+}
+
+function AppInner() {
   const { path, hash } = useLocation()
+  const { t } = useI18n()
   const hit = routes.find((r) => r.path === path)
   const main = useRef<HTMLElement>(null)
   const first = useRef(true)
-  const title = hit ? hit.title : 'Page not found'
+  const title = hit ? t(hit.title) : t('Page not found')
 
   useEffect(() => {
-    document.title = title ? `${title} | ${BRAND.name}` : `${BRAND.name}: ${BRAND.tagline}`
-  }, [title])
+    document.title = title ? `${title} | ${BRAND.name}` : `${BRAND.name}: ${t(BRAND.tagline)}`
+  }, [title, t])
 
   // On navigation: jump to the hash target (once the lazy page renders) or the
   // top, and move focus to <main> so screen readers announce the new page.
@@ -97,5 +108,37 @@ export function App() {
     )
   }
 
-  return <ToastProvider>{body}</ToastProvider>
+  return (
+    <ToastProvider>
+      <StorageWatcher />
+      {body}
+    </ToastProvider>
+  )
+}
+
+/** Tells the student when a change could not be saved, wherever it happened. */
+function StorageWatcher() {
+  const toast = useToast()
+  const { t } = useI18n()
+  // One change can fail several key writes at once; say it once.
+  const said = useRef<{ text: string; at: number } | null>(null)
+  useEffect(
+    () =>
+      onStorageFailure((f) => {
+        const text = t(
+          f.quota
+            ? 'Your browser’s storage is full, so that change wasn’t saved. Download a backup, then delete a file to free space.'
+            : 'This browser isn’t saving changes, so your library will be lost when you close the tab. Allow site data or leave private mode.',
+        )
+        const now = Date.now()
+        if (said.current?.text === text && now - said.current.at < 2000) {
+          said.current.at = now
+          return
+        }
+        said.current = { text, at: now }
+        toast(text)
+      }),
+    [toast, t],
+  )
+  return null
 }

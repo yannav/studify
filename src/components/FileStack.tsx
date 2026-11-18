@@ -2,26 +2,31 @@ import { useState } from 'react'
 
 import { HERO } from '../content'
 import { cx } from '../lib/cx'
+import { useT } from '../lib/i18n'
 import { FileIcon } from './FileIcon'
 
 type Kind = (typeof HERO.files)[number]['kind']
 
 // Offsets per depth: 0 is the front card. Mirrors the fanned stack in the hero.
+// Each card sits at least a header's height below the one behind it, so every
+// label and file icon stays in its exposed strip instead of being covered by
+// the card in front of it (which also keeps them readable on narrow screens).
 const POS = [
-  { x: 18, y: 84, z: 30, r: -1.5 },
-  { x: 52, y: 30, z: 20, r: 3 },
+  { x: 18, y: 108, z: 30, r: -1.5 },
+  { x: 52, y: 56, z: 20, r: 3 },
   { x: 0, y: 0, z: 10, r: -3 },
 ]
 
 /**
  * The fanned file cards in the hero. Each card is a tab: choosing a card
- * brings it to the front and shows what Cramly does with that file type.
+ * brings it to the front and shows what Studify does with that file type.
  */
 export function FileStack({ className }: { className?: string }) {
-  const [order, setOrder] = useState<Kind[]>(['pdf', 'doc', 'png'])
+  const t = useT()
+  const [order, setOrder] = useState<Kind[]>(['pdf', 'doc', 'txt'])
   const files = Object.fromEntries(HERO.files.map((f) => [f.kind, f])) as Record<Kind, (typeof HERO.files)[number]>
   return (
-    <div role="tablist" aria-label="File types Cramly reads" className={cx('relative h-[300px] w-[300px]', className)}>
+    <div role="tablist" aria-label="File types Studify reads" className={cx('relative h-[300px] w-[300px]', className)}>
       {HERO.files.map((f) => {
         const depth = order.indexOf(f.kind)
         const p = POS[depth]
@@ -50,7 +55,7 @@ export function FileStack({ className }: { className?: string }) {
             style={{ transform: `translate(${p.x}px, ${p.y}px) rotate(${p.r}deg)`, zIndex: p.z }}
           >
             <span className="flex items-start justify-between gap-3">
-              <span className="text-[15px] tracking-[-0.01em] text-fg">{f.label}</span>
+              <span className="text-[15px] tracking-[-0.01em] text-fg">{t(f.label)}</span>
               <FileIcon kind={f.kind} size="sm" />
             </span>
             {front && (

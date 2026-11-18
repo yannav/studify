@@ -1,4 +1,4 @@
-export function TypingDots({ label = 'Cramly is thinking' }: { label?: string }) {
+export function TypingDots({ label = 'Studify is thinking' }: { label?: string }) {
   return (
     <span role="status" aria-label={label} className="inline-flex items-center gap-1 py-1">
       {[0, 1, 2].map((i) => (

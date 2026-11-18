@@ -6,9 +6,11 @@ import { Glyph, GlyphRow } from '../components/Glyphs'
 import { Photo } from '../components/Photo'
 import { UploadDialog } from '../components/UploadDialog'
 import { HERO, IMAGES } from '../content'
+import { useT } from '../lib/i18n'
 
 /** The reference screen: title, file stack, upload action and the hooded study bot. */
 export function Hero() {
+  const t = useT()
   const [open, setOpen] = useState(false)
   return (
     <section className="relative isolate overflow-hidden" aria-labelledby="hero-title">
@@ -29,15 +31,15 @@ export function Hero() {
 
       <div className="relative min-h-[max(760px,100svh)] px-5 pb-16 pt-[128px] sm:px-8 lg:pb-0 lg:pl-[clamp(48px,14.5vw,220px)] lg:pt-[150px]">
         <h1 id="hero-title" className="text-[clamp(48px,5.6vw,84px)] font-normal leading-[0.98] tracking-[-0.06em]">
-          <span className="block text-fg">{HERO.titleTop}</span>
-          <span className="text-gradient-leaf block pb-[0.06em]">{HERO.titleBottom}</span>
+          <span className="block text-fg">{t(HERO.titleTop)}</span>
+          <span className="text-gradient-leaf block pb-[0.06em]">{t(HERO.titleBottom)}</span>
         </h1>
         <p className="mt-6 max-w-[400px] text-[17px] leading-[1.4] tracking-[-0.01em] text-soft">{HERO.lede}</p>
 
         <div className="relative mt-12 w-[300px] max-w-full">
           <FileStack />
           <Button variant="paper" size="xl" className="relative z-40 -mt-[30px] h-[74px] w-full max-w-[330px] rounded-[38px] lg:-ml-[22px] lg:w-[330px] text-[17.5px] font-semibold" onClick={() => setOpen(true)}>
-            {HERO.cta}
+            {t(HERO.cta)}
           </Button>
         </div>
 

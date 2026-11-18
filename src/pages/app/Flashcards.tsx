@@ -3,9 +3,9 @@ import { PartyPopper, RotateCw, Shuffle } from 'lucide-react'
 
 import { Button, ButtonLink, IconButton } from '../../components/Button'
 import { EmptyState } from '../../components/EmptyState'
-import { Kbd } from '../../components/Kbd'
 import { ProgressBar } from '../../components/Progress'
 import { Segmented } from '../../components/Segmented'
+import { useT } from '../../lib/i18n'
 import { cardKey, markStudied, nextState, packOf, useCardStates } from '../../lib/library'
 import type { Grade } from '../../lib/library'
 import type { Card } from '../../shared/packs'
@@ -23,6 +23,7 @@ const GRADES: { grade: Grade; label: string; key: string; hint: string; variant:
 
 /** Spaced-repetition review. Progress per card is saved, so due cards survive a reload. */
 export function FlashcardsPage() {
+  const t = useT()
   const [doc, docs, pick] = useActiveDoc()
   const [states, setStates] = useCardStates()
   const [mode, setMode] = useState<'due' | 'all'>('due')
@@ -81,10 +82,10 @@ export function FlashcardsPage() {
 
   return (
     <>
-      <AppHeader title="Flashcards" lede={`${pack.cards.length} cards from ${pack.title}. ${dueCards.length} due now.`}>
+      <AppHeader title={t('Flashcards')} lede={t('{n} cards from {title}. {due} due now.', { n: pack.cards.length, title: pack.title, due: dueCards.length })}>
         <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto">
           <DocPicker doc={doc} docs={docs} onChange={pick} />
-          <Segmented label="Cards to review" value={mode} onChange={setMode} options={[{ value: 'due', label: 'Due' }, { value: 'all', label: 'All' }]} />
+          <Segmented label={t('Cards to review')} value={mode} onChange={setMode} options={[{ value: 'due', label: t('Due') }, { value: 'all', label: t('All') }]} />
         </div>
       </AppHeader>
 
@@ -92,12 +93,12 @@ export function FlashcardsPage() {
         {card ? (
           <>
             <div className="flex items-center gap-4">
-              <ProgressBar label="Deck progress" value={done} max={total} className="flex-1" />
+              <ProgressBar label={t('Deck progress')} value={done} max={total} className="flex-1" />
               <span className="text-[13.5px] tabular-nums text-muted">
-                {done} of {total}
+                {t('{done} of {total}', { done, total })}
               </span>
               <IconButton
-                label="Shuffle remaining cards"
+                label={t('Shuffle remaining cards')}
                 size="sm"
                 onClick={() => {
                   setQueue((q) => [...q].sort(() => Math.random() - 0.5))
@@ -117,14 +118,14 @@ export function FlashcardsPage() {
                 className="flip relative grid h-[min(56vh,380px)] w-full cursor-pointer rounded-[32px] text-left"
               >
                 <span aria-hidden={flipped} className="flip-face glass absolute inset-0 flex flex-col rounded-[32px] p-7 sm:p-10">
-                  <span className="text-[13px] text-leaf-text">Question</span>
+                  <span className="text-[13px] text-leaf-text">{t('Question')}</span>
                   <span className="my-auto text-[clamp(24px,3.2vw,36px)] font-normal leading-tight tracking-[-0.035em]">{card.front}</span>
                   <span className="flex items-center gap-2 text-[13px] text-faint">
-                    <RotateCw aria-hidden className="size-3.5" /> Tap or press <Kbd>Space</Kbd> to flip
+                    <RotateCw aria-hidden className="size-3.5" /> {t('Tap or press Space to flip')}
                   </span>
                 </span>
                 <span aria-hidden={!flipped} className="flip-face flip-back absolute inset-0 flex flex-col rounded-[32px] border border-leaf/30 bg-gradient-to-br from-leaf-deep/70 to-panel p-7 shadow-float sm:p-10">
-                  <span className="text-[13px] text-leaf-text">Answer</span>
+                  <span className="text-[13px] text-leaf-text">{t('Answer')}</span>
                   <span className="my-auto text-[clamp(22px,2.8vw,32px)] font-normal leading-snug tracking-[-0.03em]">{card.back}</span>
                   <span className="text-[13px] text-faint">{card.front}</span>
                 </span>
@@ -134,22 +135,22 @@ export function FlashcardsPage() {
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-4" aria-hidden={!flipped}>
               {GRADES.map((g) => (
                 <Button key={g.grade} variant={g.variant} size="lg" className="h-16 flex-col !gap-0.5" disabled={!flipped} onClick={() => grade(g.grade)}>
-                  <span>{g.label}</span>
+                  <span>{t(g.label)}</span>
                   <span className="text-[12px] font-normal opacity-75">
-                    {g.hint}
+                    {t(g.hint)}
                   </span>
                 </Button>
               ))}
             </div>
             <p className="hidden items-center justify-center gap-2 text-[13px] text-faint sm:flex">
-              Grade with <Kbd>1</Kbd> <Kbd>2</Kbd> <Kbd>3</Kbd> <Kbd>4</Kbd> once the answer shows
+              {t('Grade with 1 2 3 4 once the answer shows')}
             </p>
           </>
         ) : (
           <EmptyState
             icon={<PartyPopper className="size-6" />}
-            title={done ? 'Deck finished' : 'All caught up'}
-            body={done ? `You reviewed ${done} card${done === 1 ? '' : 's'}. Cramly will bring each one back just before you forget it.` : 'No cards are due in this file right now. Review the whole deck anyway, or test yourself with the quiz.'}
+            title={done ? t('Deck finished') : t('All caught up')}
+            body={done ? `You reviewed ${done} card${done === 1 ? '' : 's'}. Studify will bring each one back just before you forget it.` : 'No cards are due in this file right now. Review the whole deck anyway, or test yourself with the quiz.'}
             action={
               <div className="flex flex-wrap justify-center gap-2">
                 <Button
@@ -159,10 +160,10 @@ export function FlashcardsPage() {
                     setSession((s) => s + 1)
                   }}
                 >
-                  Review all cards
+                  {t('Review all cards')}
                 </Button>
                 <ButtonLink href={`/app/quiz?doc=${doc.id}`} variant="paper">
-                  Take the quiz
+                  {t('Take the quiz')}
                 </ButtonLink>
               </div>
             }

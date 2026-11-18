@@ -1,4 +1,4 @@
-# Cramly: AI study assistant
+# Studify: AI study assistant
 
 A dark, neon-green landing page for an AI study assistant, plus a working demo
 app: a library of uploaded files, a tutor chat that cites page numbers,
@@ -21,7 +21,7 @@ bun run build
 | `/about` | Story, numbers, values, contact form |
 | `/login`, `/signup` | Sign-in and account creation (demo: validated by the Worker, kept in localStorage) |
 | `/app` | Library: streak, cards due, quiz average, search and subject filter, delete with confirm |
-| `/app/chat` | Ask Cramly: scripted tutor with citations, suggestions, streamed replies, retry on error |
+| `/app/chat` | Ask Studify: scripted tutor with citations, suggestions, streamed replies, retry on error |
 | `/app/flashcards` | Flip cards (Space), grade Again/Hard/Good/Easy (1 to 4), due-only or whole deck |
 | `/app/quiz` | One question at a time, explanations, score ring, review, history |
 | `/styleguide` | Every token and component in every state, rendered by the real code |
@@ -30,10 +30,11 @@ bun run build
 ## Where things live
 
 - Copy, plans, FAQ and image paths: `src/content.ts`. Every photo and render goes through `IMAGES`, so swap in your own files in `public/images/` from one place.
-- Study packs (summaries, flashcards, quiz questions, tutor answers): `src/shared/packs.ts`. `packForFile` picks a pack for an upload; `answer` is the scripted tutor.
+- Reading uploads: `src/lib/extract.ts` pulls text out of the file in the browser (PDF via pdf.js, .docx/.pptx by unzipping the package, text/Markdown directly) and reports a clear message for files it cannot read (images: no OCR, old binary .doc/.ppt).
+- Study packs (summary, key points, flashcards, quiz, tutor answers): `src/shared/analyze.ts` builds them from the extracted text, deterministically. `src/shared/packs.ts` holds the three sample packs a new library is seeded with, plus `answer`, the tutor that works on any pack.
 - Form rules shared by the page and the Worker: `src/shared/validate.ts`.
 - Tokens (colours, radii, shadows, motion): `src/styles.css`. Components: `src/components/`. Sections of the landing page: `src/sections/`. Pages: `src/pages/` (app screens in `src/pages/app/`).
-- App state (library, card progress, quiz history, chats, user, streak days): `src/lib/library.ts`, saved in localStorage under `cramly:`. The account menu in the app has "Reset demo data".
+- App state (library, card progress, quiz history, chats, user, streak days): `src/lib/library.ts`, saved in localStorage under `studify:`. The account menu in the app has "Reset demo data".
 
 ## Worker routes
 
@@ -42,8 +43,8 @@ All in `src/worker/index.ts`. Each validates its input and answers JSON; nothing
 | Route | Body | Answers |
 | --- | --- | --- |
 | `GET /api/health` | | `{ ok: true }` |
-| `POST /api/upload` | `{ name, size }` | 200 with a document and its pack id, 422 for a wrong type or size |
-| `POST /api/chat` | `{ packId, message }` | 200 with `{ reply: { text, cite, suggestions } }`, 404 unknown pack, 422 empty question |
+| `POST /api/upload` | `{ name, size, text }` | 200 with a document and the pack built from `text`, 422 for a wrong type, size or too little text |
+| `POST /api/chat` | `{ pack, message }` | 200 with `{ reply: { text, cite, suggestions } }`, 404 for a malformed pack, 422 empty question |
 | `POST /api/signup` | `{ name, email, password, level, terms }` | 200 with the user, 422 with field errors |
 | `POST /api/login` | `{ email, password }` | 200 with the user, 422 with field errors |
 | `POST /api/subscribe` | `{ email }` | 200 or 422 |

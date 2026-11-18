@@ -1,7 +1,8 @@
 import { Hono } from 'hono'
 
-import { PACK_BY_ID, answer, packForFile } from '../shared/packs'
-import { fileKind, validateContact, validateEmail, validateLogin, validateQuestion, validateSignup, validateUpload } from '../shared/validate'
+import { buildPack } from '../shared/analyze'
+import { answer, isPack } from '../shared/packs'
+import { fileKind, validateContact, validateEmail, validateLogin, validateQuestion, validateSignup, validateText, validateUpload } from '../shared/validate'
 
 /*
   The Worker in front of the static site. Every form posts here and gets the
@@ -62,14 +63,16 @@ app.post('/api/contact', async (c) => {
   return c.json({ ok: true })
 })
 
-// "Analyse" an upload: checks the file's name and size, returns a study pack id.
+// Analyse an upload: the browser sends the text it read from the file, and the
+// pack is built from that text. Nothing is stored server-side.
 app.post('/api/upload', async (c) => {
-  const b = await body<{ name: string; size: number }>(c)
+  const b = await body<{ name: string; size: number; text: string }>(c)
   if (!b) return c.json(invalidJson, 400)
   const error = validateUpload(b)
   if (error) return c.json({ error }, 422)
+  const textError = validateText(b.text)
+  if (textError) return c.json({ error: textError }, 422)
   const name = String(b.name).trim()
-  const pack = packForFile(name)
   return c.json({
     ok: true,
     document: {
@@ -77,21 +80,22 @@ app.post('/api/upload', async (c) => {
       name,
       kind: fileKind(name),
       size: b.size,
-      packId: pack.id,
+      pack: buildPack(String(b.text), name),
       addedAt: new Date().toISOString(),
     },
   })
 })
 
-// The scripted tutor. Swap `answer` for a model call to make it real.
+// The tutor answers from the document's pack, which the client sends with the
+// question (packs live in the browser's library). Swap `answer` for a model call
+// to make it real.
 app.post('/api/chat', async (c) => {
-  const b = await body<{ packId: string; message: string }>(c)
+  const b = await body<{ pack: unknown; message: string }>(c)
   if (!b) return c.json(invalidJson, 400)
-  const pack = typeof b.packId === 'string' ? PACK_BY_ID[b.packId] : undefined
-  if (!pack) return c.json({ error: 'That document is no longer in your library.' }, 404)
+  if (!isPack(b.pack)) return c.json({ error: 'That document is no longer in your library.' }, 404)
   const error = validateQuestion(b.message)
   if (error) return c.json({ error }, 422)
-  return c.json({ ok: true, reply: answer(pack, String(b.message)) })
+  return c.json({ ok: true, reply: answer(b.pack, String(b.message)) })
 })
 
 app.all('/api/*', (c) => c.json({ error: 'Not found' }, 404))
